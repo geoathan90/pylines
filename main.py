@@ -2,15 +2,32 @@ from pyvistaqt import BackgroundPlotter
 import pyvista as pv
 import numpy as np
 from deletion import Deleter
+from tower_frustum import TowerFrustum
 
 
 pv.set_plot_theme("dark")
 p = BackgroundPlotter(window_size=(1000, 700))
 
-# towers + pickable spheres at tops
-for x, y, h, c in [(0,0,30,"cyan"), (40,10,25,"orange"), (80,-15,35,"lime")]:
-    p.add_mesh(pv.Line((x,y,0),(x,y,h)), color=c, line_width=4, pickable=False)
-    p.add_mesh(pv.Sphere(radius=.5, center=(x,y,h)), color=c, opacity=0.8, pickable=True)
+# =============================================================================
+# # towers + pickable spheres at tops
+# for x, y, h, c in [(0,0,30,"cyan"), (40,10,25,"orange"), (80,-15,35,"lime")]:
+#     p.add_mesh(pv.Line((x,y,0),(x,y,h)), color=c, line_width=4, pickable=False)
+#     p.add_mesh(pv.Sphere(radius=.05, center=(x,y,h)), color=c, opacity=0.8, pickable=True)
+# =============================================================================
+
+Z = TowerFrustum(base_side=15, top_side=10, height=20)
+R = TowerFrustum(base_side=12, top_side=8,  height=28)
+
+for (tw, center, grads, color) in [
+    (Z, (398285, 4358426, 0),   0,   "cyan"),     
+    (R, (398185, 4358626, 0), 10,  "orange"),
+    
+]:
+    segs, nodes = tw.world(center=center, angle_grads_y=grads)
+    for a, b in segs:
+        p.add_mesh(pv.Line(a, b), color=color, line_width=3, pickable=False)
+    p.add_mesh(pv.PolyData(nodes), render_points_as_spheres=True, point_size=12, color="yellow", pickable=True)
+
 
 p.add_mesh(pv.Plane(i_size=200, j_size=200), style="wireframe", color="dimgray", opacity=0.3, pickable=False)
 
@@ -36,7 +53,7 @@ def on_pick(*args):
         connectors.append({"actor": actor, "endpoints": (pending[0].copy(), pending[1].copy())})
         pending.clear()
 
-p.enable_point_picking(callback=on_pick, use_mesh=True, show_message=True, show_point=False, left_clicking=True)
+p.enable_point_picking(callback=on_pick, use_mesh=True, show_message=False, show_point=False, left_clicking=True)
 #p.add_key_event("x", lambda: pending.clear())
 p.camera.position = (120,-120,80); p.camera.focal_point = (40,0,15); p.camera.zoom(1.2)
 # p.app.exec_()  # uncomment if running outside Spyder
